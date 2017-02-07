@@ -1,102 +1,117 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class GunShoot : MonoBehaviour
 {
+    public Animator Animator;
+    public Transform GunPoint;
+    public GameObject Spark;
+    public TextMesh textMesh;
+    public AudioClip Fire;
+    public AudioClip Reload;
+    AudioSource AudioSource;
+    bool isReloading = false;
+    int maxBullet = 12;
+    int currentBullet;
+    SteamVR_TrackedController SteamVR_TrackedController;
 
-	public Animator Animator;
-	public Transform GunPoint;
-	public GameObject Spark;
-	public TextMesh textMesh;
-	public AudioClip Fire;
-	public AudioClip Reload;
-	AudioSource AudioSource;
-	bool isReloading = false;
-	int maxBullet = 12;
-	int currentBullet;
-	SteamVR_TrackedController SteamVR_TrackedController;
+    PlayerController PlayerController;
 
-	void Start ()
-	{
-		// 注册手柄事件监听
-		SteamVR_TrackedController = GetComponent<SteamVR_TrackedController> ();
-		SteamVR_TrackedController.TriggerClicked += TriggerClicked;
-		SteamVR_TrackedController.Gripped += Gripped;
+    void Start()
+    {
+        if (GetComponentInParent<PlayerController>().isLocalPlayer)
+        {
+            PlayerController = GetComponentInParent<PlayerController>();
 
-		currentBullet = maxBullet;
-		AudioSource = GetComponent<AudioSource> ();
-	}
+            // 注册手柄事件监听
+            SteamVR_TrackedController = GetComponent<SteamVR_TrackedController>();
+            SteamVR_TrackedController.TriggerClicked += TriggerClicked;
+            SteamVR_TrackedController.Gripped += Gripped;
+        }
 
-	// 扣下扳机的开枪逻辑
-	void TriggerClicked (object sender, ClickedEventArgs e)
-	{
-		if (isReloading) {
-			return;
-		}
+        currentBullet = maxBullet;
+        AudioSource = GetComponent<AudioSource>();
+    }
 
-		if (currentBullet > 0) {
-			currentBullet--;
-			textMesh.text = currentBullet.ToString ();
-		} else {
-			return;
-		}
+    // 扣下扳机的开枪逻辑
+    void TriggerClicked(object sender, ClickedEventArgs e)
+    {
+        if (isReloading)
+        {
+            return;
+        }
 
-		// 播放开枪声音
-		AudioSource.PlayOneShot (Fire);
-		Animator.Play ("PistolAnimation");
+        if (currentBullet > 0)
+        {
+            currentBullet--;
+            textMesh.text = currentBullet.ToString();
+        }
+        else
+        {
+            return;
+        }
 
-		Debug.DrawRay (GunPoint.position, GunPoint.up * 100, Color.red, 0.02f);
+        // 播放开枪声音
+        AudioSource.PlayOneShot(Fire);
+        Animator.Play("PistolAnimation");
 
-		Ray raycast = new Ray (GunPoint.position, GunPoint.up);
-		RaycastHit hit;
+        //Debug.DrawRay(GunPoint.position, GunPoint.up * 100, Color.red, 0.02f);
 
-		// 根据 Layer 来判断是否有物体击中
-		LayerMask layer = 1 << (LayerMask.NameToLayer ("Enermy"));
-		bool bHit = Physics.Raycast (raycast, out hit, 10000, layer.value);
+        //Ray raycast = new Ray(GunPoint.position, GunPoint.up);
+        //RaycastHit hit;
 
-		Debug.Log (bHit.ToString());
+        //// 根据 Layer 来判断是否有物体击中
+        //LayerMask layer = 1 << (LayerMask.NameToLayer("Enermy"));
+        //bool bHit = Physics.Raycast(raycast, out hit, 10000, layer.value);
 
-		// 击中怪物扣血逻辑
-		if (bHit) {
+        //Debug.Log(bHit.ToString());
 
-			Debug.Log (hit.collider.gameObject);
+        //// 击中怪物扣血逻辑
+        //if (bHit)
+        //{
 
-			EnermyController ec = hit.collider.gameObject.GetComponent<EnermyController> ();
-			if (ec != null) {
-				ec.UnderAttack ();
-				GameObject go = GameObject.Instantiate (Spark);
-				go.transform.position = hit.point;
-				Destroy (go, 3);
-			} else {
-				Manager.Instance.ReStartGame ();
-			}
-		}
-	}
+        //    Debug.Log(hit.collider.gameObject);
 
-	// 握住手柄的逻辑
-	void Gripped (object sender, ClickedEventArgs e)
-	{
-		if (isReloading) {
-			return;
-		}
+        //    EnermyController ec = hit.collider.gameObject.GetComponent<EnermyController>();
+        //    if (ec != null)
+        //    {
+        //        ec.UnderAttack();
+        //        GameObject go = GameObject.Instantiate(Spark);
+        //        go.transform.position = hit.point;
+        //        Destroy(go, 3);
+        //    }
+        //    else
+        //    {
+        //        Manager.Instance.ReStartGame();
+        //    }
+        //}
 
-		isReloading = true;
-		Invoke ("ReloadFinished", 1);
+        PlayerController.CmdShoot(GunPoint.position, GunPoint.up);
+    }
 
-		AudioSource.PlayOneShot (Reload);
-	}
+    // 握住手柄的逻辑
+    void Gripped(object sender, ClickedEventArgs e)
+    {
+        if (isReloading)
+        {
+            return;
+        }
 
-	// 换弹结束逻辑
-	void ReloadFinished ()
-	{
-		isReloading = false;
-		currentBullet = maxBullet;
-		textMesh.text = currentBullet.ToString ();
-	}
+        isReloading = true;
+        Invoke("ReloadFinished", 1);
 
-	void Update ()
-	{
-		
-	}
+        AudioSource.PlayOneShot(Reload);
+    }
+
+    // 换弹结束逻辑
+    void ReloadFinished()
+    {
+        isReloading = false;
+        currentBullet = maxBullet;
+        textMesh.text = currentBullet.ToString();
+    }
+
+    void Update()
+    {
+
+    }
 }
